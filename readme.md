@@ -1,0 +1,1 @@
+Testing login hashing and comparing
