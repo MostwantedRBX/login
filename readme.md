@@ -1,1 +1,1 @@
-Testing login hashing and comparing
+Testing login hashing and comparing... please don't use real passwords if you do try this publicly for some reason. It displayed your passwords after the login.
