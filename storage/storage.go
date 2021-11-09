@@ -1,12 +1,20 @@
 package storage
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/rs/zerolog/log"
 )
+
+func tokenGenerator() string {
+	b := make([]byte, 15)
+	rand.Read(b)
+	return fmt.Sprintf("%x", b)
+}
 
 func StartDB() *sql.DB {
 
@@ -15,7 +23,7 @@ func StartDB() *sql.DB {
 		log.Logger.Fatal().Err(err)
 	}
 
-	statement, err := db.Prepare("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, hash TEXT)")
+	statement, err := db.Prepare("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, hash TEXT, token TEXT)")
 
 	if err != nil {
 		log.Logger.Fatal().Err(err)
@@ -37,12 +45,12 @@ func CreateUser(db *sql.DB, usr string, hash string) (bool, error) {
 		return true, nil
 	}
 
-	statement, err := db.Prepare("INSERT INTO users (username, hash) VALUES (?, ?)")
+	statement, err := db.Prepare("INSERT INTO users (username, hash, token) VALUES (?, ?, ?)")
 	if err != nil {
 		return false, err
 	}
 
-	_, err = statement.Exec(usr, hash)
+	_, err = statement.Exec(usr, hash, tokenGenerator())
 	if err != nil {
 		return false, err
 	}
@@ -64,6 +72,27 @@ func GetUserHash(db *sql.DB, usr string) (string, error) {
 		if user == usr {
 			rows.Close()
 			return hash, nil
+		}
+	}
+	rows.Close()
+
+	return "", errors.New("could not find user in db")
+}
+
+func GetUserToken(db *sql.DB, usr string) (string, error) {
+	rows, err := db.Query("SELECT username, token FROM users")
+	if err != nil {
+		return "", err
+	}
+
+	var user, token string
+
+	for rows.Next() {
+		rows.Scan(&user, &token)
+		if user == usr {
+			rows.Close()
+			fmt.Println(token)
+			return token, nil
 		}
 	}
 	rows.Close()

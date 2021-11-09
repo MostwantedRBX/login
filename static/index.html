@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!--
 <html>
     <head>
         <title>Login Testing</title>
@@ -6,5 +7,36 @@
     <body>
         <a href="/pages/login.html">login!</a>
         <a href="/pages/create.html">sign up!</a>
+    </body>
+</html>
+-->
+
+<html>
+    <head>
+        <title>Login/Sign Up</title>
+    </head>
+    <body>
+        <script src="js/login.js"></script>
+        <script src="js/signup.js"></script>
+
+        <h2>Login</h2>
+
+        
+        <label for="uname">Username</label>
+        <input type="text" id="loginuname" name="uname">
+        <label for="pass">Password</label>
+        <input type="password" id="loginpass" name="pass">
+        <input type="submit" onclick="login()" value="Login">
+        
+
+        <h2>Sign Up</h2>
+
+        
+        <label for="uname">Username:</label>
+        <input type="text" id="signupuname" name="uname" placeholder="MostwantedRBX">
+        <label for="pass">Password:</label>
+        <input type="password" id="signuppass" name="pass">
+        <input type="submit" onclick="signup()" value="Create Account">
+        
     </body>
 </html>

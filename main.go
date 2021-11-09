@@ -2,10 +2,10 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -18,7 +18,17 @@ import (
 	"github.com/MostwantedRBX/login/storage"
 )
 
-var db *sql.DB = storage.StartDB()
+var (
+	db *sql.DB = storage.StartDB()
+)
+
+type (
+	User struct {
+		// Email string `json:"email"` // Will be validating based on email so there can be multiple people with the same username, but give a unique id to each user for the display name
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+)
 
 func hashPass(raw string) (string, error) {
 
@@ -47,54 +57,67 @@ func checkPass(usr string, pass string) (string, bool) {
 
 func signIn(res http.ResponseWriter, req *http.Request) {
 
-	u, err := url.Parse(req.URL.String())
-	if err != nil {
-		log.Logger.Err(err).Caller().Msg("could not parse url")
+	var usr User
+
+	if err := json.NewDecoder(req.Body).Decode(&usr); err != nil {
+		log.Logger.Debug().Err(err).Msg("could not decode json")
+		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	var usr, pass string = u.Query().Get("uname"), u.Query().Get("pass")
+	if _, ok := checkPass(strings.ToLower(usr.Username), usr.Password); ok {
+		log.Logger.Info().Msg("user " + usr.Username + " logged in")
 
-	if hash, ok := checkPass(strings.ToLower(usr), pass); ok {
-		log.Logger.Info().Msg("user " + usr + " logged in")
-		fmt.Fprint(res, `
-		Logged In
-		Username: `+usr+`
-		Password: `+pass+`
-		Hash: `+hash)
+		token, err := storage.GetUserToken(db, strings.ToLower(usr.Username))
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		http.SetCookie(res, &http.Cookie{
+			Name:     "loginToken",
+			Value:    token,
+			Expires:  time.Now().Add(time.Hour * 24),
+			HttpOnly: true,
+		})
+	} else {
+		log.Logger.Info().Msg(usr.Username + " tried to log in with " + usr.Password)
+
+		res.WriteHeader(http.StatusUnauthorized)
 	}
 }
 
 func signUp(res http.ResponseWriter, req *http.Request) {
 
-	u, err := url.Parse(req.URL.String())
-	if err != nil {
-		log.Logger.Err(err)
+	var usr User
+
+	if err := json.NewDecoder(req.Body).Decode(&usr); err != nil {
+		log.Logger.Debug().Err(err).Msg("could not decode json")
+		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
+	log.Logger.Info().Msg(usr.Username + " " + usr.Password)
 
-	var usr, pass string = u.Query().Get("uname"), u.Query().Get("pass")
-
-	if len(pass) < 4 {
+	if len(usr.Password) < 4 {
 		fmt.Fprintln(res, `<head><meta http-equiv="refresh" content="4; url='../create.html'" /></head> Please make sure your password has at least 4 alphanumerical characters.`)
 		return
 	}
 
-	hash, err := hashPass(pass)
+	hash, err := hashPass(usr.Password)
 	if err != nil {
-		log.Logger.Err(err).Msg("cannot hash password for user " + usr)
+		log.Logger.Err(err).Msg("cannot hash password for user " + usr.Username)
 		return
 	}
 
-	alreadyExists, err := storage.CreateUser(db, strings.ToLower(usr), hash)
+	alreadyExists, err := storage.CreateUser(db, strings.ToLower(usr.Username), hash)
 	if err != nil {
 		log.Logger.Err(err).Msg("user could not be added to database")
 		return
 	} else if alreadyExists {
-		fmt.Fprintln(res, `<head><meta http-equiv="refresh" content="4; url='../create.html'" /></head> That username already exists, please try another.`)
+		fmt.Fprintln(res, `<head><meta http-equiv="refresh" content="4; url='index.html'" /></head> That username already exists, please try another.`)
 		return
 	} else if !alreadyExists {
-		fmt.Fprintln(res, `<head><meta http-equiv="refresh" content="0; url='../login.html'" /></head>`)
+		fmt.Fprintln(res, `<head><meta http-equiv="refresh" content="0; url='index.html" /></head>`)
 	}
 }
 
@@ -111,8 +134,8 @@ func main() {
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/pages/login/signin", signIn)
-	r.HandleFunc("/pages/create/signup", signUp)
+	r.HandleFunc("/login/", signIn).Methods("POST")
+	r.HandleFunc("/signup/", signUp).Methods("POST")
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
 
 	server := &http.Server{
