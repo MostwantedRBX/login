@@ -10,6 +10,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type User struct {
+	// Email string `json:"email"` // Will be validating based on email so there can be multiple people with the same username, but give a unique id to each user for the display name
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 func tokenGenerator() string {
 	b := make([]byte, 15)
 	rand.Read(b)
@@ -80,6 +86,7 @@ func GetUserHash(db *sql.DB, usr string) (string, error) {
 }
 
 func GetUserToken(db *sql.DB, usr string) (string, error) {
+
 	rows, err := db.Query("SELECT username, token FROM users")
 	if err != nil {
 		return "", err
@@ -98,4 +105,25 @@ func GetUserToken(db *sql.DB, usr string) (string, error) {
 	rows.Close()
 
 	return "", errors.New("could not find user in db")
+}
+
+func GetUsernameFromToken(db *sql.DB, token string) (User, error) {
+	rows, err := db.Query("SELECT username, token FROM users")
+	if err != nil {
+		return User{}, err
+	}
+	var user, dbToken string
+	for rows.Next() {
+		rows.Scan(&user, &dbToken)
+		if token == dbToken {
+			rows.Close()
+			fmt.Println(token)
+			return User{
+				Username: user,
+				Password: token,
+			}, nil
+		}
+	}
+	rows.Close()
+	return User{}, errors.New("could not find token in db")
 }

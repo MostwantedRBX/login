@@ -23,10 +23,14 @@ var (
 )
 
 type (
-	User struct {
-		// Email string `json:"email"` // Will be validating based on email so there can be multiple people with the same username, but give a unique id to each user for the display name
-		Username string `json:"username"`
-		Password string `json:"password"`
+	CookieToken struct {
+		Token string `json:"token"`
+	}
+
+	UserData struct {
+		Token  string `json:"token"`
+		Name   string `json:"name"`
+		Exists bool   `json:"exists"`
 	}
 )
 
@@ -57,7 +61,7 @@ func checkPass(usr string, pass string) (string, bool) {
 
 func signIn(res http.ResponseWriter, req *http.Request) {
 
-	var usr User
+	var usr storage.User
 
 	if err := json.NewDecoder(req.Body).Decode(&usr); err != nil {
 		log.Logger.Debug().Err(err).Msg("could not decode json")
@@ -78,7 +82,8 @@ func signIn(res http.ResponseWriter, req *http.Request) {
 			Name:     "loginToken",
 			Value:    token,
 			Expires:  time.Now().Add(time.Hour * 24),
-			HttpOnly: true,
+			Path:     "/",
+			HttpOnly: false,
 		})
 	} else {
 		log.Logger.Info().Msg(usr.Username + " tried to log in with " + usr.Password)
@@ -89,7 +94,7 @@ func signIn(res http.ResponseWriter, req *http.Request) {
 
 func signUp(res http.ResponseWriter, req *http.Request) {
 
-	var usr User
+	var usr storage.User
 
 	if err := json.NewDecoder(req.Body).Decode(&usr); err != nil {
 		log.Logger.Debug().Err(err).Msg("could not decode json")
@@ -121,6 +126,42 @@ func signUp(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func authToken(res http.ResponseWriter, req *http.Request) {
+
+	var token CookieToken
+
+	if err := json.NewDecoder(req.Body).Decode(&token); err != nil {
+		log.Logger.Debug().Err(err).Msg("could not decode json")
+		http.Error(res, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	usr, err := storage.GetUsernameFromToken(db, token.Token)
+	var resp UserData
+	if err != nil {
+		log.Logger.Err(err).Caller()
+		resp = UserData{
+			Token:  token.Token,
+			Name:   "",
+			Exists: false,
+		}
+	} else {
+		resp = UserData{
+			Token:  token.Token,
+			Name:   usr.Username,
+			Exists: true,
+		}
+	}
+
+	err = json.NewEncoder(res).Encode(resp)
+
+	if err != nil {
+		http.Error(res, err.Error(), 500)
+		return
+	}
+
+}
+
 func main() {
 
 	file, err := os.OpenFile("logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.FileMode(0666))
@@ -136,6 +177,7 @@ func main() {
 
 	r.HandleFunc("/login/", signIn).Methods("POST")
 	r.HandleFunc("/signup/", signUp).Methods("POST")
+	r.HandleFunc("/authtoken/", authToken).Methods("POST")
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
 
 	server := &http.Server{

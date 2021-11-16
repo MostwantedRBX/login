@@ -5,7 +5,7 @@ function login() {
         "username":uname,
         "password":pass,
     };
-    var res = fetch('/login/', {
+    fetch('/login/', {
         method: 'POST', // or 'PUT'
         headers: {
           'Content-Type': 'application/json',
