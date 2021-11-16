@@ -11,5 +11,5 @@ function signup() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
-      })
+      }).then(res => {window.location.reload()})
 }
