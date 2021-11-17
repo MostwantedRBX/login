@@ -1,3 +1,5 @@
-Testing login hashing and comparing using bcrypt and sqlite3... please don't use real passwords if you do try this publicly for some reason. It displayed your passwords after the login.
+Testing login hashing and comparing using bcrypt and sqlite3... please don't use real passwords if you do try this publicly for some reason.
 
-TODO: comment code
+Currently it has a way to sign up, login, a way to track sessions with tokens, and a way to log out.
+
+Your username is displayed in the top right when you are logged in.

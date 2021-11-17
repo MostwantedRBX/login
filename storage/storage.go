@@ -16,12 +16,14 @@ type User struct {
 	Password string `json:"password"`
 }
 
+//	generate a token and send it return it
 func tokenGenerator() string {
 	b := make([]byte, 15)
 	rand.Read(b)
 	return fmt.Sprintf("%x", b)
 }
 
+//	create the database with username as the key, hash and token as the rows if it doesn't exist, start it if it does
 func StartDB() *sql.DB {
 
 	db, err := sql.Open("sqlite3", "./login.db")
@@ -44,6 +46,7 @@ func StartDB() *sql.DB {
 	return db
 }
 
+//	add the user, hash and generated token to the database, if the username is already there, return true, else create the use and return false.
 func CreateUser(db *sql.DB, usr string, hash string) (bool, error) {
 
 	log.Logger.Info().Msg("creating user for " + usr)
@@ -64,6 +67,7 @@ func CreateUser(db *sql.DB, usr string, hash string) (bool, error) {
 	return false, nil
 }
 
+//	get the hash for the username provided, return the hash
 func GetUserHash(db *sql.DB, usr string) (string, error) {
 
 	rows, err := db.Query("SELECT username, hash FROM users")
@@ -85,6 +89,7 @@ func GetUserHash(db *sql.DB, usr string) (string, error) {
 	return "", errors.New("could not find user in db")
 }
 
+//	get the token for the username, return token
 func GetUserToken(db *sql.DB, usr string) (string, error) {
 
 	rows, err := db.Query("SELECT username, token FROM users")
@@ -107,6 +112,7 @@ func GetUserToken(db *sql.DB, usr string) (string, error) {
 	return "", errors.New("could not find user in db")
 }
 
+//	get username from provided token and return it
 func GetUsernameFromToken(db *sql.DB, token string) (User, error) {
 	rows, err := db.Query("SELECT username, token FROM users")
 	if err != nil {
