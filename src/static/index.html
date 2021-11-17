@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!--
+<html>
+    <head>
+        <title>Login Testing</title>
+    </head>
+    <body>
+        <a href="/pages/login.html">login!</a>
+        <a href="/pages/create.html">sign up!</a>
+    </body>
+</html>
+-->
+
+<html>
+    <head>
+        <title>Login/Sign Up</title>
+        <link rel="stylesheet" type="text/css" href="css/index.css">
+    </head>
+    <body>
+        <script src="js/login.js"></script>
+        <script src="js/signup.js"></script>
+        <script src="js/username.js"></script>
+
+        <div class="topbar">
+            <h2 style="padding-left: 20px;">Login Testing</h2>
+            <div class="name-display">
+                <h2 class="nameh2"></h2>
+                <button onclick="logout()" id="logout-button" class="logout_button">logout</button>
+            </div>
+        </div>
+
+        <br>
+        <div class="login-div">
+            <h2>Login:</h2>
+            <label for="uname">Username:</label>
+            <input type="text" id="loginuname" placeholder="MostwantedRBX" name="uname">
+            <label for="pass">Password:</label>
+            <input type="password" id="loginpass" placeholder="****" name="pass">
+            <input type="submit" class="button" onclick="login()" value="Login">
+        </div>
+        <br>
+        <br>
+        <div class="signup_div">
+            <h2>Sign Up:</h2>
+            <label for="uname">Username:</label>
+            <input type="text" id="signupuname" name="uname" placeholder="MostwantedRBX">
+            <label for="pass">Password:</label>
+            <input type="password" id="signuppass" placeholder="****" name="pass">
+            <input type="submit" class="button" onclick="signup()" value="Create Account">
+        </div>
+    </body>
+</html>

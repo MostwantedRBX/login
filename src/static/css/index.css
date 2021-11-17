@@ -50,6 +50,29 @@ html, body {
 	border-width: 1px;
 }
 
-.logout_button:hover {
+.logout_button:hover, .button:hover {
 	background-color: darkgray;
+}
+
+.login-div, .signup_div {
+	align-self: center;
+	display: block;
+	padding-left: 10px;
+	border-style: solid;
+	border-width: 1px;
+	border-radius: 5px;
+	border-color: black;
+	margin-left: 20%;
+	margin-right: 20%;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	background-color: lightgray;
+}
+
+.button{
+	width: 20%;
+	border-style: solid;
+	border-radius: 3px;
+	border-color: black;
+	border-width: 1px;
 }
